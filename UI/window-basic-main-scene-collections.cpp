@@ -436,8 +436,7 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 			obs_data_array_push_back(newSources, item);
 
 		obs_data_set_array(collection, "sources", newSources);
-		obs_data_save_json_pretty_safe(
-			collection, QT_TO_UTF8(exportFile), "tmp", "bak");
+		SaveJsonSafe(collection, QT_TO_UTF8(exportFile), "tmp", "bak");
 	}
 }
 
