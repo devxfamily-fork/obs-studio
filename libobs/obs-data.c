@@ -765,6 +765,18 @@ bool obs_data_save_json(obs_data_t *data, const char *file)
 	return false;
 }
 
+bool obs_data_save_json_pretty(obs_data_t* data, const char* file)
+{
+	const char *json = obs_data_get_json_pretty(data);
+
+	if (json && *json) {
+		return os_quick_write_utf8_file(file, json, strlen(json),
+						false);
+	}
+
+	return false;
+}
+
 bool obs_data_save_json_safe(obs_data_t *data, const char *file,
 			     const char *temp_ext, const char *backup_ext)
 {
