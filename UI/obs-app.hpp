@@ -251,6 +251,25 @@ inline config_t *GetGlobalConfig()
 	return App()->GlobalConfig();
 }
 
+inline bool SaveJson(obs_data_t *data, const char *file)
+{
+	if (config_get_bool(GetGlobalConfig(), "General", "JsonPretty")) {
+		return obs_data_save_json_pretty(data, file);
+	} else {
+		return obs_data_save_json(data, file);
+	}
+}
+
+inline bool SaveJsonSafe(obs_data_t *data, const char *file,
+			 const char *temp_ext, const char *backup_ext)
+{
+	if (config_get_bool(GetGlobalConfig(), "General", "JsonPretty")) {
+		return obs_data_save_json_pretty_safe(data, file, temp_ext, backup_ext);
+	} else {
+		return obs_data_save_json_safe(data, file, temp_ext, backup_ext);
+	}
+}
+
 std::vector<std::pair<std::string, std::string>> GetLocaleNames();
 inline const char *Str(const char *lookup)
 {

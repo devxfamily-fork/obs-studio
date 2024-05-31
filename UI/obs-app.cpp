@@ -448,6 +448,7 @@ bool OBSApp::InitGlobalConfigDefaults()
 				true);
 
 	config_set_default_bool(globalConfig, "General", "ConfirmOnExit", true);
+	config_set_default_bool(globalConfig, "General", "JsonPretty", false);
 
 #if _WIN32
 	config_set_default_string(globalConfig, "Video", "Renderer",
@@ -2742,7 +2743,7 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 	}
 
 	if (modified)
-		obs_data_save_json_safe(data, file, "tmp", "bak");
+		SaveJsonSafe(data, file, "tmp", "bak");
 }
 
 bool update_nvenc_presets(ConfigFile &config)

@@ -481,9 +481,9 @@ ImageSourceToolbar::ImageSourceToolbar(QWidget *parent, OBSSource source)
 	ui->pathLabel->setText(obs_module_get_locale_text(mod, "File"));
 
 	OBSDataAutoRelease settings = obs_source_get_settings(source);
-	std::string file = obs_data_get_string(settings, "file");
+	const char* file = obs_data_get_string(settings, "file");
 
-	ui->path->setText(file.c_str());
+	ui->path->setText(file);
 }
 
 ImageSourceToolbar::~ImageSourceToolbar() {}

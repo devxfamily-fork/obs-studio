@@ -3697,8 +3697,7 @@ static void WriteJsonData(OBSPropertiesView *view, const char *path)
 	if (ret > 0) {
 		obs_data_t *settings = view->GetSettings();
 		if (settings) {
-			obs_data_save_json_safe(settings, full_path, "tmp",
-						"bak");
+			SaveJsonSafe(settings, full_path, "tmp", "bak");
 		}
 	}
 }

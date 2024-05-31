@@ -847,7 +847,7 @@ void OBSBasic::Save(const char *file)
 		obs_data_set_obj(saveData, "resolution", res);
 	}
 
-	if (!obs_data_save_json_safe(saveData, file, "tmp", "bak"))
+	if (!SaveJsonSafe(saveData, file, "tmp", "bak"))
 		blog(LOG_ERROR, "Could not save scene data to %s", file);
 }
 
@@ -1378,7 +1378,7 @@ void OBSBasic::SaveService()
 	obs_data_set_string(data, "type", obs_service_get_type(service));
 	obs_data_set_obj(data, "settings", settings);
 
-	if (!obs_data_save_json_safe(data, serviceJsonPath, "tmp", "bak"))
+	if (!SaveJsonSafe(data, serviceJsonPath, "tmp", "bak"))
 		blog(LOG_WARNING, "Failed to save service");
 }
 
