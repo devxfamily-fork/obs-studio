@@ -38,6 +38,7 @@
 #include <memory>
 #include <vector>
 #include <deque>
+#include <filesystem>
 
 #include "window-main.hpp"
 #include "obs-app-theming.hpp"
@@ -234,6 +235,8 @@ public slots:
 signals:
 	void StyleChanged();
 };
+
+const std::filesystem::path &GetBasePath();
 
 int GetConfigPath(char *path, size_t size, const char *name);
 char *GetConfigPathPtr(const char *name);

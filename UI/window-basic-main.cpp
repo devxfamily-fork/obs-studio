@@ -564,6 +564,84 @@ static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
 	obs_data_set_obj(parent, name, data);
 }
 
+static void ConvertFileItemToAbsolutePath(obs_data_item_t *fileItem)
+{
+	auto file = obs_data_item_get_string(fileItem);
+	if (!file || !(*file))
+		return;
+	filesystem::path filePath(file);
+	if (filePath.is_absolute())
+		return;
+	auto absolutePath = filesystem::absolute(GetBasePath() / file);
+	obs_data_item_set_string(
+		&fileItem, absolutePath.lexically_normal().string().c_str());
+}
+
+static void ConvertFileItemToRelativePath(obs_data_item_t *fileItem)
+{
+	auto file = obs_data_item_get_string(fileItem);
+	if (!file || !(*file))
+		return;
+	filesystem::path filePath(file);
+	if (filePath.is_relative())
+		return;
+	if (filePath.root_name() != GetBasePath().root_name())
+		return;
+	auto relativePath = filesystem::relative(file, GetBasePath());
+	obs_data_item_set_string(
+		&fileItem, relativePath.lexically_normal().string().c_str());
+}
+
+static void EnumerateObsDataArraySettings(obs_data_array_t *dataArray,
+					  const char *targetNames[],
+					  size_t targetCount,
+					  void (*cb)(obs_data_item_t *item))
+{
+	if (!dataArray)
+		return;
+	auto EnumeratorSettings = [&](obs_data_t *settings) {
+		for (size_t i = 0; i < targetCount; ++i) {
+			auto item = obs_data_item_byname(settings, targetNames[i]);
+			if (item) {
+				cb(item);
+				obs_data_item_release(&item);
+			}
+		}
+	};
+	using EnumeratorSettings_t = decltype(EnumeratorSettings);
+	auto EnumeratorFilters = [&](obs_data_array_t *filters) {
+		EnumerateObsDataArraySettings(filters, targetNames, targetCount,
+					      cb);
+	};
+	using EnumeratorFilters_t = decltype(EnumeratorFilters);
+	typedef struct Funcs {
+		EnumeratorSettings_t enum_settings;
+		EnumeratorFilters_t enum_filters;
+	} Funcs_t;
+	auto funcs = Funcs_t{EnumeratorSettings, EnumeratorFilters};
+	obs_data_array_enum(
+		dataArray,
+		[](obs_data *data, void *param) {
+			auto &funcs = *static_cast<Funcs_t *>(param);
+			auto settings = obs_data_get_obj(data, "settings");
+			if (settings) {
+				funcs.enum_settings(settings);
+			}
+			auto filters = obs_data_get_array(data, "filters");
+			if (filters) {
+				funcs.enum_filters(filters);
+			}
+		},
+		static_cast<void *>(&funcs));
+}
+
+static inline void EnumerateObsDataArraySettingsForFileItem(
+	obs_data_array_t *dataArray, void (*cb)(obs_data_item_t *fileItem))
+{
+	static const char *fileItemNames[] = {"file", "local_file", "path", "image_path"};
+	EnumerateObsDataArraySettings(dataArray, fileItemNames, 4, cb);
+}
+
 static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 				    obs_data_array_t *quickTransitionData,
 				    int transitionDuration,
@@ -847,8 +925,21 @@ void OBSBasic::Save(const char *file)
 		obs_data_set_obj(saveData, "resolution", res);
 	}
 
+	auto sources = obs_data_get_array(saveData, "sources");
+	if (portable_mode) {
+		EnumerateObsDataArraySettingsForFileItem(
+			sources, ConvertFileItemToRelativePath);
+		EnumerateObsDataArraySettingsForFileItem(
+			transitions, ConvertFileItemToRelativePath);
+	}
 	if (!SaveJsonSafe(saveData, file, "tmp", "bak"))
 		blog(LOG_ERROR, "Could not save scene data to %s", file);
+	if (portable_mode) {
+		EnumerateObsDataArraySettingsForFileItem(
+			sources, ConvertFileItemToAbsolutePath);
+		EnumerateObsDataArraySettingsForFileItem(
+			transitions, ConvertFileItemToAbsolutePath);
+	}
 }
 
 void OBSBasic::DeferSaveBegin()
@@ -1174,6 +1265,13 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 	LoadAudioDevice(AUX_AUDIO_2, 4, data);
 	LoadAudioDevice(AUX_AUDIO_3, 5, data);
 	LoadAudioDevice(AUX_AUDIO_4, 6, data);
+
+	if (portable_mode) {
+		EnumerateObsDataArraySettingsForFileItem(
+			sources, ConvertFileItemToAbsolutePath);
+		EnumerateObsDataArraySettingsForFileItem(
+			transitions, ConvertFileItemToAbsolutePath);
+	}
 
 	if (!sources) {
 		sources = std::move(groups);
