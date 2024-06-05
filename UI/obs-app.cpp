@@ -2745,6 +2745,13 @@ static void load_debug_privilege(void)
 #define ALLOW_PORTABLE_MODE 0
 #endif
 
+const filesystem::path &GetBasePath()
+{
+	static auto basePath = filesystem::canonical(
+		filesystem::current_path() / filesystem::path(BASE_PATH));
+	return basePath;
+}
+
 int GetConfigPath(char *path, size_t size, const char *name)
 {
 #if ALLOW_PORTABLE_MODE
